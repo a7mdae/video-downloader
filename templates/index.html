@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Video Downloader</title>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; }
+        .card { background-color: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); width: 100%; max-width: 450px; }
+        h1 { font-size: 1.4rem; margin-bottom: 1.5rem; color: #38bdf8; text-align: center; }
+        input[type="text"] { width: 100%; padding: 0.8rem; border-radius: 6px; border: 1px solid #334155; background-color: #0f172a; color: #fff; margin-bottom: 1rem; box-sizing: border-box; font-size: 0.95rem; }
+        input[type="text"]:focus { outline: none; border-color: #38bdf8; }
+        button, .download-btn { width: 100%; padding: 0.8rem; background-color: #0ea5e9; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: background-color 0.2s; text-decoration: none; display: block; text-align: center; box-sizing: border-box; margin-top: 0.5rem; }
+        button:hover, .download-btn:hover { background-color: #0284c7; }
+        button:disabled { background-color: #475569; cursor: not-allowed; }
+        .download-btn { background-color: #22c55e; }
+        .download-btn:hover { background-color: #16a34a; }
+        #status { margin-top: 1.2rem; text-align: center; font-size: 0.9rem; word-break: break-word; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Video Downloader</h1>
+        <form id="downloadForm">
+            <input type="text" id="url" name="url" placeholder="Paste YouTube / TikTok / Reel link..." required autocomplete="off">
+            <button type="submit" id="submitBtn">Process Video</button>
+        </form>
+        <div id="status"></div>
+        <div id="actionArea" style="margin-top: 1rem;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById("downloadForm");
+        const statusDiv = document.getElementById("status");
+        const submitBtn = document.getElementById("submitBtn");
+        const actionArea = document.getElementById("actionArea");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const url = document.getElementById("url").value;
+            statusDiv.style.color = "#38bdf8";
+            statusDiv.textContent = "Processing video... Please wait.";
+            submitBtn.disabled = true;
+            actionArea.innerHTML = "";
+
+            const formData = new URLSearchParams();
+            formData.append("url", url);
+
+            try {
+                const response = await fetch("/download", { method: "POST", body: formData });
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    statusDiv.style.color = "#4ade80";
+                    statusDiv.textContent = result.message;
+                    
+                    // Create direct download button for the user's device
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = `/get-video/${encodeURIComponent(result.filename)}`;
+                    downloadLink.className = "download-btn";
+                    downloadLink.textContent = "📥 Download to Your Device";
+                    downloadLink.setAttribute("download", "");
+                    actionArea.appendChild(downloadLink);
+                    
+                    document.getElementById("url").value = "";
+                } else {
+                    statusDiv.style.color = "#f87171";
+                    statusDiv.textContent = "Error: " + result.message;
+                }
+            } catch (err) {
+                statusDiv.style.color = "#f87171";
+                statusDiv.textContent = "Network error occurred.";
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
